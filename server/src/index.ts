@@ -1,15 +1,15 @@
 import express from "express";
+import { ApolloServer } from "@apollo/server";
 import { MikroORM, RequestContext } from "@mikro-orm/core";
 import mikroConfig from "./mikro-orm.config";
 import { __prod__ } from "./constants";
-import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { buildSchema } from "type-graphql";
-import { HelloResolver } from "./resolvers/hello";
 import { json } from "body-parser";
+import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
+import { UserResolver } from "./resolvers/user";
 import cors from "cors";
-import { Post } from "./entities/Post";
 
 const main = async () => {
   const orm = await MikroORM.init(mikroConfig);
@@ -19,7 +19,7 @@ const main = async () => {
 
   const server = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, PostResolver],
+      resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
   });
@@ -33,7 +33,7 @@ const main = async () => {
   //apply graphql to server
   app.use(
     "/graphql",
-    cors<cors.CorsRequest>(),
+    cors<cors.CorsRequest>({ credentials: true }),
     json(),
     expressMiddleware(server, {
       context: async () => ({ em: orm.em }),
@@ -41,8 +41,7 @@ const main = async () => {
   );
 
   app.get("/", async (_req, res) => {
-    const posts = await orm.em.find(Post, {});
-    res.send(posts);
+    res.send("nothing to see here");
   });
 
   app.listen(4000, () => {
